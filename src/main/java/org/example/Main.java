@@ -1,24 +1,23 @@
 package org.example;
 
+import org.apache.dubbo.config.ReferenceConfig;
 import org.example.Raft.Client;
 
 import java.io.*;
 import java.util.Properties;
+import org.apache.dubbo.config.RegistryConfig;
+import org.apache.dubbo.config.ServiceConfig;
+
+import org.apache.dubbo.config.ProtocolConfig;
+import org.apache.dubbo.config.bootstrap.DubboBootstrap;
+import org.example.api.MasterClientService;
+
+
 
 public class Main {
-    String Master_IpAddress="zookeeper://127.0.0.1:2181";
-    String Application_Name="first-dubbo-consumer";
-    // Map<String,String> TableToAddress;
+    static String Master_IpAddress="zookeeper://127.0.0.1:2181";
+    static String Application_Name="client-service";
 
-    // public boolean ExistCache(String tableName){
-    //     boolean result=false;
-    //     if(TableToAddress.get(tableName)){
-    //         //Table exist in the Cache
-    //         result=true;
-    //     }
-    //     return result;
-
-    // }
 
 
     public static void Welcome(){
@@ -33,20 +32,20 @@ public class Main {
 
     public static void main(String[] args) throws IOException {
 //        // 连master
-//        ReferenceConfig<GreetingsService> reference = new ReferenceConfig<>();
-//        reference.setInterface(MasterClientService.class);
-//
-//        DubboBootstrap.getInstance()
-//                .application(Application_Name)
-//                .registry(new RegistryConfig(Master_IpAddress))
-//                .reference(reference);
+        ReferenceConfig<MasterClientService> reference = new ReferenceConfig<>();
+        reference.setInterface(MasterClientService.class);
+
+        DubboBootstrap.getInstance()
+                .application(Application_Name)
+                .registry(new RegistryConfig(Master_IpAddress))
+                .reference(reference);
         //Input From the User-----
         System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "WARN");
 
         Welcome();
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
         String line;
-//        StringBuilder input = new StringBuilder();
+
 
         while(true){
             line=reader.readLine();
@@ -62,12 +61,17 @@ public class Main {
 
 //                String IndexAndIp_Address = service.GetRegionServer(line);
                 // using gRPC to connect the RegionServer
+                MasterClientService service = reference.get();
                 String raftGroupId = "demoRaftGroup123";
-                String peers = "0:127.0.0.1:15100,1:127.0.0.1:15101,2:127.0.0.1:15102";
+                String peers = service.GetRegionServer(line);
+
+
+
 
 
                 try {
-                    Client test = new Client(raftGroupId,peers);
+
+                   Client test = new Client(raftGroupId,peers);
 
                     test.run();
                     PrintTable(test.operation(line));

@@ -34,6 +34,7 @@ public class Client extends SubCommandBase {
         builder.setClientRpc(new GrpcFactory(new Parameters()).newRaftClientRpc(ClientId.randomId(), raftProperties));
         client = builder.build();
 
+
 //        operation(client, sql);
 
 
@@ -42,18 +43,9 @@ public class Client extends SubCommandBase {
     public String operation(String sql) throws IOException {
         RaftClientReply send ;
 
-        try {
-            // 设置超时时间为10秒钟
-            send = client.io().send(
-                    new SQLMessage(sql),1000);
-        } catch (TimeoutIOException e) {
-            // 超时处理
-            client.close();
-            return "Request timed out";
-        } catch (IOException e) {
-            // 其他异常处理
-            return "Exception occurred: " + e.getMessage();
-        }
+        send = client.io().send(
+                    new SQLMessage(sql));
+
 
         return send.getMessage().getContent().toStringUtf8();
 
