@@ -15,6 +15,7 @@ import java.io.IOException;
  */
 public class Client extends SubCommandBase {
     private RaftClient client;
+    
 
     public Client(String raftGroupIdInput, String peersInput) {
         super(raftGroupIdInput, peersInput);
@@ -39,9 +40,24 @@ public class Client extends SubCommandBase {
     }
 
     public String operation(String sql) throws IOException {
-        RaftClientReply send = client.io().send(
-                new SQLMessage(sql));
+        RaftClientReply send ;
+
+        try {
+            // 设置超时时间为10秒钟
+            send = client.io().send(
+                    new SQLMessage(sql),1000);
+        } catch (TimeoutIOException e) {
+            // 超时处理
+            client.close();
+            return "Request timed out";
+        } catch (IOException e) {
+            // 其他异常处理
+            return "Exception occurred: " + e.getMessage();
+        }
 
         return send.getMessage().getContent().toStringUtf8();
+
+        
+
     }
 }
