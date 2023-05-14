@@ -138,6 +138,8 @@ public class SQLStateMachine extends BaseStateMachine {
         final long index = entry.getIndex();
         final String result;
 
+        System.out.println("Log Index:" + index);
+
         try(AutoCloseableLock writeLock = writeLock()) {
             result = SQLStorage.Execute(q.toString());
             updateLastAppliedTermIndex(entry.getTerm(), index);
@@ -146,6 +148,7 @@ public class SQLStateMachine extends BaseStateMachine {
         System.out.println(result);
 
         final CompletableFuture<Message> f = CompletableFuture.completedFuture(Message.valueOf(result));
+
 
         final RaftPeerRole role = trx.getServerRole();
         if (role == RaftPeerRole.LEADER) {

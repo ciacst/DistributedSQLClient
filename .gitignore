@@ -12,6 +12,9 @@ target/
 *.iml
 *.ipr
 
+RaftStorage/
+*.jar
+
 ### Eclipse ###
 .apt_generated
 .classpath

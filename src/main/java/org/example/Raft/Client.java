@@ -41,10 +41,7 @@ public class Client extends SubCommandBase {
     public String operation(String sql) throws IOException {
         RaftClientReply send = client.io().send(
                 new SQLMessage(sql));
-        System.out.println("Success: " + send.isSuccess());
-        Message res = send.getMessage();
-        System.out.println(res.getContent().toStringUtf8());
 
-        return send.getMessage().toString();
+        return send.getMessage().getContent().toStringUtf8();
     }
 }
