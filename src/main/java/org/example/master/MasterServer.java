@@ -21,8 +21,8 @@ public class MasterServer {
         clientService.setInterface(MasterClientService.class);
         clientService.setRef(new MasterClientServiceImpl());
         DubboBootstrap.getInstance()
-                .application("client-service")
-                .registry(new RegistryConfig("zookeeper://127.0.0.1:2181"))
+                .application("client-service-callee")
+                .registry(new RegistryConfig(ZOOKEEPER_ADDRESS))
                 .protocol(new ProtocolConfig("dubbo", -1))
                 .service(clientService)
                 .start()

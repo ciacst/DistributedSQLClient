@@ -16,7 +16,7 @@ import org.example.api.MasterClientService;
 
 public class Main {
     static String Master_IpAddress="zookeeper://127.0.0.1:2181";
-    static String Application_Name="client-service";
+    static String Application_Name="client-service-caller";
 
 
 
@@ -46,6 +46,7 @@ public class Main {
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
         String line;
 
+        MasterClientService service = reference.get();
 
         while(true){
             line=reader.readLine();
@@ -55,15 +56,10 @@ public class Main {
                 break;
             }
             else{
-                //If the
-                //Send SQL to Master Server Get the RegionServer Ip from the Master
-//                MasterClientService service = reference.get();
-
-//                String IndexAndIp_Address = service.GetRegionServer(line);
-                // using gRPC to connect the RegionServer
-                MasterClientService service = reference.get();
+//                 using gRPC to connect the RegionServer
                 String raftGroupId = "demoRaftGroup123";
                 String peers = service.GetRegionServer(line);
+                System.out.println(peers);
 
 
 

@@ -1,9 +1,6 @@
 package org.example.util;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 enum SqlType {
@@ -52,29 +49,32 @@ public class TableRouter {
     }
 
     public void regionAddServer(Integer regionId, String serverIp) {
-        if(Regions.contains(regionId)) {
+        if(Regions.containsKey(regionId)) {
             Regions.get(regionId).add(serverIp);
         }
     }
 
     public void addRegion(Integer regionId, List<String> servers) {
-        if(Regions.contains(regionId))
+        if(Regions.containsKey(regionId))
             return;
         Regions.put(regionId, servers);
+        RegionTables.put(regionId, new HashSet<>());
     }
 
     public List<String> getServersOfTable(String table) {
-        if(!TableRegion.contains(table))
+        if(!TableRegion.containsKey(table))
             return null;
         Integer RegionId = TableRegion.get(table);
         return Regions.get(RegionId);
     }
 
-    void ControlTable(String table, SqlType type) {
+    List<String> ControlTable(String table, SqlType type) {
         if(type.equals(SqlType.DROP)) {
             Integer region = TableRegion.get(table);
             if(region != null) {
                 RegionTables.get(region).remove(table);
+                TableRegion.remove(table);
+                return Regions.get(region);
             }
         } else if (type.equals(SqlType.CREATE)) {
             Integer regionId = -1;
@@ -88,35 +88,43 @@ public class TableRouter {
             if(!regionId.equals(-1)) {
                 RegionTables.get(regionId).add(table);
                 TableRegion.put(table, regionId);
+                return Regions.get(regionId);
             }
         }
-
+        return null;
     }
 
     public String getServersForSql(String sql) {
         SqlType type = getTypeOfSql(sql);
         String table = "";
+        List<String> Servers = null;
         if(type.equals(SqlType.CREATE) || type.equals(SqlType.DROP)) {
             table = getTableOfControlSql(sql);
             if(table.equals(""))
                 return "";
-            ControlTable(table, type);
+            Servers = ControlTable(table, type);
+        }
+        else if(type.equals(SqlType.INVALID)) {
+            return "";
         }
         else {
             table = getTableOfQuerySql(sql);
             if (table.equals(""))
                 return "";
+            Servers = getServersOfTable(table);
         }
-        List<String> Servers = getServersOfTable(table);
+        if(Servers == null)
+            return "";
         String res = "";
         for (int i = 0; i < Servers.size(); i++) {
-            res += Integer.toString(i);
-            res += ":";
             if (i > 0) {
                 res += ",";
             }
+            res += Integer.toString(i);
+            res += ":";
             res += Servers.get(i);
         }
+        System.out.println("result: " + res);
         return res;
     }
 
@@ -138,6 +146,8 @@ public class TableRouter {
 
         Regions.put(1, region1);
         Regions.put(2, region2);
+        RegionTables.put(1, new HashSet<>());
+        RegionTables.put(2, new HashSet<>());
     }
 }
 
