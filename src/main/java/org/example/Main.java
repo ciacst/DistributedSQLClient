@@ -52,9 +52,15 @@ public class Main {
         while(true){
             line=reader.readLine();
 
-            if(line.equals("quit")){
+            if(line.toLowerCase().equals("quit")){
                 GoodBye();
                 break;
+            }
+            else if(line.toLowerCase().equals("tables")) {
+                System.out.println(service.GetAllTables());
+            }
+            else if(line.toLowerCase().equals("regions")) {
+                System.out.println(service.GetRegionPeers());
             }
             else{
 //                 using gRPC to connect the RegionServer

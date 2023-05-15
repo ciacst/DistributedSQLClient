@@ -131,6 +131,18 @@ public class TableRouter {
         return res;
     }
 
+    public ConcurrentHashMap<String, String> getTableRegion() {
+        return TableRegion;
+    }
+
+    public ConcurrentHashMap<String, List<String>> getRegions() {
+        return Regions;
+    }
+
+    public ConcurrentHashMap<String, Set<String>> getRegionTables() {
+        return RegionTables;
+    }
+
     public TableRouter() {
         TableRegion = new ConcurrentHashMap<>();
         Regions = new ConcurrentHashMap<>();
