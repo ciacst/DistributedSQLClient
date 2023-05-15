@@ -13,9 +13,9 @@ enum SqlType {
     INVALID
 }
 public class TableRouter {
-    private ConcurrentHashMap<String, Integer> TableRegion;
-    private ConcurrentHashMap<Integer, List<String>> Regions;
-    private ConcurrentHashMap<Integer, Set<String>> RegionTables;
+    private ConcurrentHashMap<String, String> TableRegion;
+    private ConcurrentHashMap<String, List<String>> Regions;
+    private ConcurrentHashMap<String, Set<String>> RegionTables;
     public SqlType getTypeOfSql(String sql) {
         String[] tokens = sql.split(" ");
         SqlType type = SqlType.INVALID;
@@ -54,7 +54,7 @@ public class TableRouter {
         }
     }
 
-    public void addRegion(Integer regionId, List<String> servers) {
+    public void addRegion(String regionId, List<String> servers) {
         if(Regions.containsKey(regionId))
             return;
         Regions.put(regionId, servers);
@@ -64,45 +64,45 @@ public class TableRouter {
     public List<String> getServersOfTable(String table) {
         if(!TableRegion.containsKey(table))
             return null;
-        Integer RegionId = TableRegion.get(table);
+        String RegionId = TableRegion.get(table);
         return Regions.get(RegionId);
     }
 
-    List<String> ControlTable(String table, SqlType type) {
+    String ControlTable(String table, SqlType type) {
         if(type.equals(SqlType.DROP)) {
-            Integer region = TableRegion.get(table);
+            String region = TableRegion.get(table);
             if(region != null) {
                 RegionTables.get(region).remove(table);
                 TableRegion.remove(table);
-                return Regions.get(region);
+                return region;
             }
         } else if (type.equals(SqlType.CREATE)) {
-            Integer regionId = -1;
+            String regionId = null;
             Integer minSize = Integer.MAX_VALUE;
-            for(Map.Entry<Integer, Set<String>> entry : RegionTables.entrySet()) {
+            for(Map.Entry<String, Set<String>> entry : RegionTables.entrySet()) {
                 if(entry.getValue().size() < minSize) {
                     minSize = entry.getValue().size();
                     regionId = entry.getKey();
                 }
             }
-            if(!regionId.equals(-1)) {
+            if(regionId != null) {
                 RegionTables.get(regionId).add(table);
                 TableRegion.put(table, regionId);
-                return Regions.get(regionId);
+                return regionId;
             }
         }
         return null;
     }
 
-    public String getServersForSql(String sql) {
+    // return : region id for the table
+    public String getRegionAndExecute(String sql) {
         SqlType type = getTypeOfSql(sql);
         String table = "";
-        List<String> Servers = null;
         if(type.equals(SqlType.CREATE) || type.equals(SqlType.DROP)) {
             table = getTableOfControlSql(sql);
             if(table.equals(""))
                 return "";
-            Servers = ControlTable(table, type);
+            return ControlTable(table, type);
         }
         else if(type.equals(SqlType.INVALID)) {
             return "";
@@ -111,8 +111,12 @@ public class TableRouter {
             table = getTableOfQuerySql(sql);
             if (table.equals(""))
                 return "";
-            Servers = getServersOfTable(table);
+            return TableRegion.get(table);
         }
+    }
+
+    public String getRegionPeers(String region) {
+        List<String> Servers = Regions.get(region);
         if(Servers == null)
             return "";
         String res = "";
@@ -124,7 +128,6 @@ public class TableRouter {
             res += ":";
             res += Servers.get(i);
         }
-        System.out.println("result: " + res);
         return res;
     }
 
@@ -144,10 +147,10 @@ public class TableRouter {
         region2.add("127.0.0.1:8084");
         region2.add("127.0.0.1:8085");
 
-        Regions.put(1, region1);
-        Regions.put(2, region2);
-        RegionTables.put(1, new HashSet<>());
-        RegionTables.put(2, new HashSet<>());
+        Regions.put("region1", region1);
+        Regions.put("region2", region2);
+        RegionTables.put("region1", new HashSet<>());
+        RegionTables.put("region2", new HashSet<>());
     }
 }
 

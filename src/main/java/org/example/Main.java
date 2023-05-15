@@ -10,12 +10,13 @@ import org.apache.dubbo.config.ServiceConfig;
 
 import org.apache.dubbo.config.ProtocolConfig;
 import org.apache.dubbo.config.bootstrap.DubboBootstrap;
+import org.example.api.GetRegionServerResp;
 import org.example.api.MasterClientService;
 
 
 
 public class Main {
-    static String Master_IpAddress="zookeeper://127.0.0.1:2181";
+    static String Master_IpAddress="zookeeper://172.24.193.26:2181";
     static String Application_Name="client-service-caller";
 
 
@@ -57,24 +58,28 @@ public class Main {
             }
             else{
 //                 using gRPC to connect the RegionServer
-                String raftGroupId = "demoRaftGroup123";
-                String peers = service.GetRegionServer(line);
-                System.out.println(peers);
-
-
-
-
-
-                try {
-
-                   Client test = new Client(raftGroupId,peers);
-
-                    test.run();
-                    PrintTable(test.operation(line));
-
-                }catch(Exception e){
-                    e.printStackTrace();
+                GetRegionServerResp resp = service.GetRegionServer(line);
+                if(!resp.Found) {
+                    System.out.println("Table not find or sql invalid.");
+                    continue;
                 }
+                String raftGroupId = resp.Region;
+                String peers = resp.Peers;
+                System.out.println(raftGroupId + " " + peers);
+
+
+
+
+//                try {
+//
+//                   Client test = new Client(raftGroupId,peers);
+//
+//                    test.run();
+//                    PrintTable(test.operation(line));
+//
+//                }catch(Exception e){
+//                    e.printStackTrace();
+//                }
 
             }
 

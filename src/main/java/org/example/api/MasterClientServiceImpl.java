@@ -5,8 +5,16 @@ public class MasterClientServiceImpl implements MasterClientService {
 
     private TableRouter router;
     @Override
-    public String GetRegionServer(String SQL) {
-        return router.getServersForSql(SQL);
+    public GetRegionServerResp GetRegionServer(String SQL) {
+        String region = router.getRegionAndExecute(SQL);
+        System.out.println("region: " + region);
+        if(region == null || region.equals(""))
+            return new GetRegionServerResp("", "", false);
+        String peers = router.getRegionPeers(region);
+        System.out.println("peers: " + peers);
+        if(peers == null || peers.equals(""))
+            return new GetRegionServerResp("", "", false);
+        return new GetRegionServerResp(region, peers, true);
     }
 
     public MasterClientServiceImpl() {

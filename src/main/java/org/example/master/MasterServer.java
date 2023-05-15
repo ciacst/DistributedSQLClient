@@ -12,7 +12,7 @@ import org.example.api.*;
 import java.util.ServiceConfigurationError;
 
 public class MasterServer {
-    private static final String ZOOKEEPER_HOST = System.getProperty("zookeeper.address", "127.0.0.1");
+    private static final String ZOOKEEPER_HOST = System.getProperty("zookeeper.address", "172.24.193.26");
     private static final String ZOOKEEPER_PORT = System.getProperty("zookeeper.port", "2181");
     private static final String ZOOKEEPER_ADDRESS = "zookeeper://" + ZOOKEEPER_HOST + ":" + ZOOKEEPER_PORT;
 

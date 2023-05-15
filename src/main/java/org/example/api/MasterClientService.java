@@ -1,4 +1,5 @@
 package org.example.api;
+import org.example.api.GetRegionServerResp;
 public interface MasterClientService {
-    String GetRegionServer(String SQL);
+    GetRegionServerResp GetRegionServer(String SQL);
 }
