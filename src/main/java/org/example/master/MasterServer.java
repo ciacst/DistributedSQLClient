@@ -17,7 +17,9 @@ public class MasterServer {
     private static final String ZOOKEEPER_PORT = System.getProperty("zookeeper.port", "2181");
     private static final String ZOOKEEPER_ADDRESS = "zookeeper://" + ZOOKEEPER_HOST + ":" + ZOOKEEPER_PORT;
 
-    public static void main(String[] args) {
+    public void run() {
+        System.out.println(ZOOKEEPER_ADDRESS);
+
         ServiceConfig<MasterClientService> clientService = new ServiceConfig<>();
         clientService.setInterface(MasterClientService.class);
         TableRouter TheRouter = new TableRouter();
