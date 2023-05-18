@@ -64,4 +64,8 @@ public class MasterClientServiceImpl implements MasterClientService {
     public MasterClientServiceImpl() {
         router = new TableRouter();
     }
+
+    public MasterClientServiceImpl(TableRouter router_) {
+        router = router_;
+    }
 }

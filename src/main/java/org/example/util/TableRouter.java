@@ -54,11 +54,12 @@ public class TableRouter {
         }
     }
 
-    public void addRegion(String regionId, List<String> servers) {
-        if(Regions.containsKey(regionId))
-            return;
-        Regions.put(regionId, servers);
-        RegionTables.put(regionId, new HashSet<>());
+    public void addRegionServer(String regionId, String server) {
+        if(!Regions.containsKey(regionId)) {
+            RegionTables.put(regionId, new HashSet<>());
+            Regions.put(regionId, new ArrayList<>());
+        }
+        Regions.get(regionId).add(server);
     }
 
     public List<String> getServersOfTable(String table) {
