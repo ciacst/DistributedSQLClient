@@ -1,5 +1,6 @@
 package org.example.util;
 
+import java.lang.reflect.Type;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -30,12 +31,22 @@ public class TableRouter {
         return type;
     }
 
-    public String getTableOfQuerySql(String sql) {
+    public String getTableOfQuerySql(String sql, SqlType type) {
         String[] tokens = sql.split(" ");
-        for(int i = 0; i < tokens.length; i++) {
-            if(tokens[i].toLowerCase().equals("from") && i + 1 < tokens.length)
-                return tokens[i+1];
+        if(type.equals(SqlType.SELECT) || type.equals(SqlType.DELETE)) {
+            for(int i = 0; i < tokens.length; i++) {
+                if(tokens[i].toLowerCase().equals("from") && i + 1 < tokens.length)
+                    return tokens[i+1];
+            }
         }
+        else if(type.equals(SqlType.INSERT)) {
+            for(int i = 0; i < tokens.length; i++) {
+                if(tokens[i].toLowerCase().equals("into") && i + 1 < tokens.length)
+                    return tokens[i+1];
+            }
+        }
+        else if(type.equals(SqlType.UPDATE))
+            return tokens[1];
         return "";
     }
 
@@ -48,18 +59,21 @@ public class TableRouter {
         return "";
     }
 
-    public void regionAddServer(Integer regionId, String serverIp) {
-        if(Regions.containsKey(regionId)) {
-            Regions.get(regionId).add(serverIp);
-        }
-    }
-
     public void addRegionServer(String regionId, String server) {
         if(!Regions.containsKey(regionId)) {
+            System.out.println("new region " + regionId);
+            System.out.println("servers:");
+            String[] ServerIdAndIps = server.split(",");
+            List<String> serverIps = new ArrayList<>();
+            for(int i = 0; i < ServerIdAndIps.length; i++) {
+                String[] ids = ServerIdAndIps[i].split(":");
+                String ipPort = ids[1]+":"+ids[2];
+                serverIps.add(ipPort);
+                System.out.println(ipPort);
+            }
             RegionTables.put(regionId, new HashSet<>());
-            Regions.put(regionId, new ArrayList<>());
+            Regions.put(regionId, serverIps);
         }
-        Regions.get(regionId).add(server);
     }
 
     public List<String> getServersOfTable(String table) {
@@ -78,6 +92,9 @@ public class TableRouter {
                 return region;
             }
         } else if (type.equals(SqlType.CREATE)) {
+            if(TableRegion.containsKey(table)) {
+                return null;
+            }
             String regionId = null;
             Integer minSize = Integer.MAX_VALUE;
             for(Map.Entry<String, Set<String>> entry : RegionTables.entrySet()) {
@@ -109,7 +126,7 @@ public class TableRouter {
             return "";
         }
         else {
-            table = getTableOfQuerySql(sql);
+            table = getTableOfQuerySql(sql, type);
             if (table.equals(""))
                 return "";
             return TableRegion.get(table);
@@ -150,20 +167,20 @@ public class TableRouter {
         RegionTables = new ConcurrentHashMap<>();
 
         // todo : use files for initialization and persistence.
-        List<String> region1 = new ArrayList<>();
-        region1.add("127.0.0.1:8080");
-        region1.add("127.0.0.1:8081");
-        region1.add("127.0.0.1:8082");
-
-        List<String> region2 = new ArrayList<>();
-        region2.add("127.0.0.1:8083");
-        region2.add("127.0.0.1:8084");
-        region2.add("127.0.0.1:8085");
-
-        Regions.put("region1", region1);
-        Regions.put("region2", region2);
-        RegionTables.put("region1", new HashSet<>());
-        RegionTables.put("region2", new HashSet<>());
+//        List<String> region1 = new ArrayList<>();
+//        region1.add("127.0.0.1:8080");
+//        region1.add("127.0.0.1:8081");
+//        region1.add("127.0.0.1:8082");
+//
+//        List<String> region2 = new ArrayList<>();
+//        region2.add("127.0.0.1:8083");
+//        region2.add("127.0.0.1:8084");
+//        region2.add("127.0.0.1:8085");
+//
+//        Regions.put("region1", region1);
+//        Regions.put("region2", region2);
+//        RegionTables.put("region1", new HashSet<>());
+//        RegionTables.put("region2", new HashSet<>());
     }
 }
 
