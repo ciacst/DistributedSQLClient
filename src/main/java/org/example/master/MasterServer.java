@@ -13,7 +13,7 @@ import org.example.util.TableRouter;
 import java.util.ServiceConfigurationError;
 
 public class MasterServer {
-    private static final String ZOOKEEPER_HOST = System.getProperty("zookeeper.address", "10.162.231.164");
+    private static final String ZOOKEEPER_HOST = System.getProperty("zookeeper.address", "172.24.196.71");
     private static final String ZOOKEEPER_PORT = System.getProperty("zookeeper.port", "2181");
     private static final String ZOOKEEPER_ADDRESS = "zookeeper://" + ZOOKEEPER_HOST + ":" + ZOOKEEPER_PORT;
 
@@ -22,7 +22,7 @@ public class MasterServer {
 
         ServiceConfig<MasterClientService> clientService = new ServiceConfig<>();
         clientService.setInterface(MasterClientService.class);
-        TableRouter TheRouter = new TableRouter();
+        TableRouter TheRouter = new TableRouter("RegionStoreFile", "TableStoreFile");
         clientService.setRef(new MasterClientServiceImpl(TheRouter));
         ServiceConfig<MasterRegionService> regionService = new ServiceConfig<>();
         regionService.setInterface(MasterRegionService.class);

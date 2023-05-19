@@ -12,7 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class client {
-    static String Master_IpAddress="zookeeper://10.162.231.164:2181";
+    static String Master_IpAddress="zookeeper://172.24.196.71:2181";
     static String Application_Name="client-service-caller";
 
 

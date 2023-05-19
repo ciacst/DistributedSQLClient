@@ -1,8 +1,10 @@
 package org.example.util;
 
+import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import org.example.util.MapSerializer;
 
 enum SqlType {
     SELECT,
@@ -17,6 +19,56 @@ public class TableRouter {
     private ConcurrentHashMap<String, String> TableRegion;
     private ConcurrentHashMap<String, List<String>> Regions;
     private ConcurrentHashMap<String, Set<String>> RegionTables;
+
+    private String RegionPath = "RegionStoreFile";
+    private String TablePath = "TableStoreFile";
+
+    MapSerializer<String, List<String>> RegionSerializer;
+
+    MapSerializer<String, Set<String>> TableSerializer;
+
+    private void WriteRegion() {
+        try {
+            RegionSerializer.serializeMapToFile(Regions, RegionPath);
+        } catch (IOException e) {
+            System.out.println("Fail to write region, info:");
+            System.out.println(e.toString());
+        }
+    }
+
+    private void WriteTable() {
+        try {
+            TableSerializer.serializeMapToFile(RegionTables, TablePath);
+        } catch (IOException e) {
+            System.out.println("Fail to write region, info:");
+            System.out.println(e.toString());
+        }
+    }
+
+    private void init() {
+        System.out.print("initing...");
+        try {
+            Regions = RegionSerializer.deserializeMapFromFile(RegionPath);
+            RegionTables = TableSerializer.deserializeMapFromFile(TablePath);
+        } catch (Exception e) {
+            System.out.println("Fail to read, info:");
+            System.out.println(e.toString());
+            Regions = new ConcurrentHashMap<>();
+            RegionTables = new ConcurrentHashMap<>();
+        }
+
+        TableRegion = new ConcurrentHashMap<>();
+        for (Map.Entry<String, Set<String>> entry1 : RegionTables.entrySet()) {
+            String key = entry1.getKey();
+            Set<String> value = entry1.getValue();
+            for (String valueElement : value) {
+//                System.out.println("Key: " + key + ", Value: " + valueElement);
+                TableRegion.put(valueElement, key);
+            }
+        }
+        System.out.print("Done!");
+    }
+
     public SqlType getTypeOfSql(String sql) {
         String[] tokens = sql.split(" ");
         SqlType type = SqlType.INVALID;
@@ -73,6 +125,8 @@ public class TableRouter {
             }
             RegionTables.put(regionId, new HashSet<>());
             Regions.put(regionId, serverIps);
+            WriteTable();
+            WriteRegion();
         }
     }
 
@@ -89,6 +143,7 @@ public class TableRouter {
             if(region != null) {
                 RegionTables.get(region).remove(table);
                 TableRegion.remove(table);
+                WriteTable();
                 return region;
             }
         } else if (type.equals(SqlType.CREATE)) {
@@ -106,6 +161,7 @@ public class TableRouter {
             if(regionId != null) {
                 RegionTables.get(regionId).add(table);
                 TableRegion.put(table, regionId);
+                WriteTable();
                 return regionId;
             }
         }
@@ -167,20 +223,33 @@ public class TableRouter {
         RegionTables = new ConcurrentHashMap<>();
 
         // todo : use files for initialization and persistence.
-//        List<String> region1 = new ArrayList<>();
-//        region1.add("127.0.0.1:8080");
-//        region1.add("127.0.0.1:8081");
-//        region1.add("127.0.0.1:8082");
-//
-//        List<String> region2 = new ArrayList<>();
-//        region2.add("127.0.0.1:8083");
-//        region2.add("127.0.0.1:8084");
-//        region2.add("127.0.0.1:8085");
-//
-//        Regions.put("region1", region1);
-//        Regions.put("region2", region2);
-//        RegionTables.put("region1", new HashSet<>());
-//        RegionTables.put("region2", new HashSet<>());
+        List<String> region1 = new ArrayList<>();
+        region1.add("127.0.0.1:8080");
+        region1.add("127.0.0.1:8081");
+        region1.add("127.0.0.1:8082");
+
+        List<String> region2 = new ArrayList<>();
+        region2.add("127.0.0.1:8083");
+        region2.add("127.0.0.1:8084");
+        region2.add("127.0.0.1:8085");
+
+        Regions.put("region1", region1);
+        Regions.put("region2", region2);
+        RegionTables.put("region1", new HashSet<>());
+        RegionTables.put("region2", new HashSet<>());
+
+        RegionSerializer = new MapSerializer<>();
+        TableSerializer = new MapSerializer<>();
+        WriteTable();
+        WriteRegion();
+    }
+
+    public TableRouter(String Region, String Table) {
+        RegionPath = Region;
+        TablePath = Table;
+        RegionSerializer = new MapSerializer<>();
+        TableSerializer = new MapSerializer<>();
+        init();
     }
 }
 
