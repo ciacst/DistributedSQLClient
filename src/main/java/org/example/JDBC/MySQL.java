@@ -36,7 +36,7 @@ public class MySQL {
             System.out.println("database: " + databaseName);
 
             // connect mysql
-            String url = "jdbc:mysql://" + ip + ":" + port + "/" + databaseName + "?useSSL=false&serverTimezone=UTC";
+                String url = "jdbc:mysql://" + ip + ":" + port + "/" + databaseName + "?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
             Class.forName("com.mysql.cj.jdbc.Driver");
             //获取数据库连接
             conn = DriverManager.getConnection(url,userName,password);
