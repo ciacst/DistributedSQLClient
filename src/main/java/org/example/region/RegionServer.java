@@ -16,7 +16,7 @@ import java.io.IOException;
 import java.util.Properties;
 
 public class RegionServer {
-    static String Master_IpAddress="zookeeper://10.162.231.164:2181";
+    static String Master_IpAddress="zookeeper://127.0.0.1:2181";
     static String Application_Name="region-service-caller";
     public void run() {
         // For both server and client
@@ -63,9 +63,10 @@ public class RegionServer {
         MasterRegionService service = reference.get();
         service.ReportRegion(raftGroupId,peers);
 
-
         Server core = new Server(raftGroupId,peers,id,storageDir);
 //        Client test = new Client(raftGroupId,peers);
+
+        service.ReportRegion(raftGroupId,peers);
 
         try {
             core.run();

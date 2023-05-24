@@ -1,3 +1,8 @@
+map.ser
+RegionStoreFile
+TableStoreFile
+
+
 target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
@@ -39,3 +44,6 @@ build/
 
 ### Mac OS ###
 .DS_Store
+TableStoreFile
+RegionStoreFile
+*.ser

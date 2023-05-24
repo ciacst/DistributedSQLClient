@@ -11,6 +11,7 @@ import org.apache.ratis.server.RaftServerConfigKeys;
 import org.apache.ratis.thirdparty.com.google.protobuf.ByteString;
 import org.apache.ratis.util.LifeCycle;
 import org.apache.ratis.util.NetUtils;
+import org.apache.ratis.util.TimeDuration;
 
 import java.io.File;
 import java.util.Collections;
@@ -52,6 +53,9 @@ public class Server extends SubCommandBase {
 
         final RaftGroup raftGroup = RaftGroup.valueOf(RaftGroupId.valueOf(ByteString.copyFromUtf8(getRaftGroupId())),
                 getPeers());
+
+        // 设置Extended No Leader TimeOut
+        RaftServerConfigKeys.Notification.setNoLeaderTimeout(properties, TimeDuration.valueOf(30,TimeUnit.SECONDS));
         RaftServer raftServer = RaftServer.newBuilder()
                 .setServerId(RaftPeerId.valueOf(id))
                 .setStateMachine(stateMachine).setProperties(properties)
