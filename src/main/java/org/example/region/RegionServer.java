@@ -1,12 +1,21 @@
 package org.example.region;
 
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.framework.recipes.nodes.PersistentEphemeralNode;
+import org.apache.curator.framework.recipes.nodes.PersistentNode;
+import org.apache.curator.framework.state.ConnectionState;
+import org.apache.curator.framework.state.ConnectionStateListener;
+import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.dubbo.config.ProtocolConfig;
 import org.apache.dubbo.config.ReferenceConfig;
 import org.apache.dubbo.config.RegistryConfig;
 import org.apache.dubbo.config.bootstrap.DubboBootstrap;
+import org.apache.zookeeper.CreateMode;
 import org.example.Raft.Server;
 import org.example.api.MasterClientService;
 import org.example.api.MasterRegionService;
+import org.example.util.Watcher;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 
@@ -14,9 +23,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 public class RegionServer {
-    static String Master_IpAddress="zookeeper://127.0.0.1:2181";
+    static String Zookeeper_IpAddress="zookeeper://127.0.0.1:2181";
+    static String Zookeeper_IpPort = "127.0.0.1:2181";
     static String Application_Name="region-service-caller";
     public void run() {
         // For both server and client
@@ -55,7 +66,7 @@ public class RegionServer {
 
         DubboBootstrap.getInstance()
                 .application(Application_Name)
-                .registry(new RegistryConfig(Master_IpAddress))
+                .registry(new RegistryConfig(Zookeeper_IpAddress))
                 .protocol(myconfig)
                 .start()
                 .reference(reference);
@@ -65,10 +76,26 @@ public class RegionServer {
 
         Server core = new Server(raftGroupId,peers,id,storageDir);
 //        Client test = new Client(raftGroupId,peers);
-
-        service.ReportRegion(raftGroupId,peers);
-
         try {
+            // create a node
+            CuratorFramework zookeeperClient = CuratorFrameworkFactory.builder()
+                    .connectString(Zookeeper_IpPort)
+                    .retryPolicy(new ExponentialBackoffRetry(1000, 3))
+                    .sessionTimeoutMs(3000)
+                    .build();
+
+            zookeeperClient.start();
+
+            String path = "/regions/" + raftGroupId + "/" + id;
+            PersistentNode node = new PersistentNode(zookeeperClient, CreateMode.EPHEMERAL_SEQUENTIAL,true , path, peers.getBytes());
+            node.start();
+            node.waitForInitialCreate(3, TimeUnit.SECONDS);
+
+            // create a listener
+            Watcher.createWatcher(path,zookeeperClient);
+
+            // report
+            service.ReportRegion(raftGroupId,peers);
             core.run();
 //            test.run();
 //            test.operation("select * from devices");

@@ -13,7 +13,7 @@ public class Main {
 
     public static void main(String[] args) throws IOException {
         System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "WARN");
-
+//
 //        RegionServer mst = new RegionServer();
 //        mst.run();
 
