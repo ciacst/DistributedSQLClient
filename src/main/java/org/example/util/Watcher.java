@@ -29,6 +29,7 @@ public class Watcher {
                     default:
                         break;
                 }
+                System.out.println("现在有 " + zkClient.getChildren().forPath(path).size() + " 个节点");
             }
         };
 

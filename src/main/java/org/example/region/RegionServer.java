@@ -64,15 +64,15 @@ public class RegionServer {
         ProtocolConfig myconfig = new ProtocolConfig("10.162.231.164");
         myconfig.setHost("10.162.231.164");
 
-        DubboBootstrap.getInstance()
-                .application(Application_Name)
-                .registry(new RegistryConfig(Zookeeper_IpAddress))
-                .protocol(myconfig)
-                .start()
-                .reference(reference);
-
-        MasterRegionService service = reference.get();
-        service.ReportRegion(raftGroupId,peers);
+//        DubboBootstrap.getInstance()
+//                .application(Application_Name)
+//                .registry(new RegistryConfig(Zookeeper_IpAddress))
+//                .protocol(myconfig)
+//                .start()
+//                .reference(reference);
+//
+//        MasterRegionService service = reference.get();
+//        service.ReportRegion(raftGroupId,peers);
 
         Server core = new Server(raftGroupId,peers,id,storageDir);
 //        Client test = new Client(raftGroupId,peers);
@@ -81,21 +81,23 @@ public class RegionServer {
             CuratorFramework zookeeperClient = CuratorFrameworkFactory.builder()
                     .connectString(Zookeeper_IpPort)
                     .retryPolicy(new ExponentialBackoffRetry(1000, 3))
-                    .sessionTimeoutMs(3000)
+                    .sessionTimeoutMs(5000)
+                    .connectionTimeoutMs(2000)
                     .build();
 
             zookeeperClient.start();
 
             String path = "/regions/" + raftGroupId + "/" + id;
-            PersistentNode node = new PersistentNode(zookeeperClient, CreateMode.EPHEMERAL_SEQUENTIAL,true , path, peers.getBytes());
+            PersistentNode node = new PersistentNode(zookeeperClient, CreateMode.EPHEMERAL_SEQUENTIAL,false , path, peers.getBytes());
             node.start();
             node.waitForInitialCreate(3, TimeUnit.SECONDS);
 
-            // create a listener
-            Watcher.createWatcher(path,zookeeperClient);
+//             create a listener
+            String path2 = "/regions/" + raftGroupId;
+            Watcher.createWatcher(path2,zookeeperClient);
 
             // report
-            service.ReportRegion(raftGroupId,peers);
+//            service.ReportRegion(raftGroupId,peers);
             core.run();
 //            test.run();
 //            test.operation("select * from devices");
