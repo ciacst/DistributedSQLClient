@@ -1,9 +1,14 @@
 package org.example.JDBC;
 
+import org.example.api.MasterRegionServiceImpl;
+
 import java.io.*;
 
 import java.sql.*;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 import java.util.Properties;
 
 public class MySQL {
@@ -46,10 +51,38 @@ public class MySQL {
             e.printStackTrace();
         }
 
-
     }
 
+    public void ClearDatabase(){
+        try {
+            Statement statement = conn.createStatement();
+            ResultSet resultSet = statement.executeQuery("SHOW TABLES");
+            List<String> tables = new ArrayList<>();
+
+            while (resultSet.next()) {
+                tables.add(resultSet.getString(1));
+            }
+
+            // 遍历并删除所有表
+            for (String table : tables) {
+                statement.executeUpdate("DROP TABLE IF EXISTS " + table);
+                System.out.println("Deleted table: " + table);
+            }
+
+            conn.close();
+
+            System.out.println("All tables have been deleted!");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+    }
     public String Execute(String sql){
+        if(sql.equals(MasterRegionServiceImpl.DeleteAll)){
+            ClearDatabase();
+            return "Delete Success";
+        }
+
         ByteArrayOutputStream TrueStream = new ByteArrayOutputStream();
         PrintStream MyStream = new PrintStream(TrueStream);
 

@@ -29,6 +29,8 @@ public class RegionServer {
     static String Zookeeper_IpAddress="zookeeper://127.0.0.1:2181";
     static String Zookeeper_IpPort = "127.0.0.1:2181";
     static String Application_Name="region-service-caller";
+
+    public static MasterRegionService service;
     public void run() {
         // For both server and client
         String raftGroupId;
@@ -71,11 +73,11 @@ public class RegionServer {
 //                .start()
 //                .reference(reference);
 //
-//        MasterRegionService service = reference.get();
+//        service = reference.get();
 //        service.ReportRegion(raftGroupId,peers);
 
         Server core = new Server(raftGroupId,peers,id,storageDir);
-//        Client test = new Client(raftGroupId,peers);
+
         try {
             // create a node
             CuratorFramework zookeeperClient = CuratorFrameworkFactory.builder()
@@ -92,15 +94,12 @@ public class RegionServer {
             node.start();
             node.waitForInitialCreate(3, TimeUnit.SECONDS);
 
-//             create a listener
+            // create a watcher
             String path2 = "/regions/" + raftGroupId;
             Watcher.createWatcher(path2,zookeeperClient);
 
-            // report
-//            service.ReportRegion(raftGroupId,peers);
             core.run();
-//            test.run();
-//            test.operation("select * from devices");
+
         }catch (Exception e){
             e.printStackTrace();
         }

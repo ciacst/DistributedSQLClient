@@ -5,6 +5,8 @@ import org.apache.ratis.proto.RaftProtos.LogEntryProto;
 import org.apache.ratis.proto.RaftProtos.RaftPeerRole;
 import org.apache.ratis.protocol.Message;
 import org.apache.ratis.protocol.RaftGroupId;
+import org.apache.ratis.protocol.RaftGroupMemberId;
+import org.apache.ratis.protocol.RaftPeerId;
 import org.apache.ratis.server.RaftServer;
 import org.apache.ratis.server.protocol.TermIndex;
 import org.apache.ratis.server.raftlog.RaftLog;
@@ -22,20 +24,17 @@ import org.apache.ratis.util.AutoCloseableLock;
 import org.apache.ratis.util.JavaUtils;
 import org.apache.ratis.util.MD5FileUtil;
 import org.example.JDBC.MySQL;
+import org.example.api.MasterRegionServiceImpl;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+import static org.example.region.RegionServer.service;
 
 public class SQLStateMachine extends BaseStateMachine {
     private final SimpleStateMachineStorage storage = new SimpleStateMachineStorage();
@@ -135,14 +134,39 @@ public class SQLStateMachine extends BaseStateMachine {
         final SQLMessage q = new SQLMessage(content);
         System.out.println("Apply Transaction:" + q.toString());
 
-        final long index = entry.getIndex();
-        final String result;
+        String result = new String();
 
-        System.out.println("Log Index:" + index);
+        System.out.println("Log Index:" + entry.getIndex());
+        System.out.println("LastAppliedTerm and Index:" + getLastAppliedTermIndex().getTerm() + " " + getLastAppliedTermIndex().getIndex());
 
         try(AutoCloseableLock writeLock = writeLock()) {
-            result = SQLStorage.Execute(q.toString());
-            updateLastAppliedTermIndex(entry.getTerm(), index);
+
+            try {
+                // 读TermIndex
+                Properties props = new Properties();
+                FileReader fis = new FileReader("TermIndex.properties");
+                props.load(fis);
+                String persist_term = props.getProperty("term");
+                String persist_index = props.getProperty("index");
+                fis.close();
+
+                if(TermIndex.valueOf(entry.getTerm(),entry.getIndex()).compareTo(
+                        TermIndex.valueOf(Long.parseLong(persist_term),Long.parseLong(persist_index)))
+                        >0){
+                    result = SQLStorage.Execute(q.toString());
+                    // 写TermIndex
+                    Properties props2 = new Properties();
+
+                    props2.setProperty("term", String.valueOf(entry.getTerm()));
+                    props2.setProperty("index", String.valueOf(entry.getIndex()));
+
+                    props2.store(new FileWriter("TermIndex.properties"),null);
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            updateLastAppliedTermIndex(entry.getTerm(), entry.getIndex());
         }
 
         System.out.println(result);
@@ -158,5 +182,28 @@ public class SQLStateMachine extends BaseStateMachine {
         }
 
         return f;
+    }
+
+    public void notifyLeaderChanged(RaftGroupMemberId groupMemberId, RaftPeerId newLeaderId){
+
+        Properties props = new Properties();
+        try {
+            // 从文件中读取配置信息
+            FileInputStream fis = new FileInputStream("config.properties");
+            props.load(fis);
+            fis.close();
+
+            // 获取属性值
+            String raftGroupId = props.getProperty("raftGroupId");
+            String peers = props.getProperty("peers");
+
+            // 输出属性值
+            System.out.println("Report：raftGroupId: " + raftGroupId);
+            System.out.println("peers: " + peers);
+
+            service.ReportRegion(raftGroupId,peers);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

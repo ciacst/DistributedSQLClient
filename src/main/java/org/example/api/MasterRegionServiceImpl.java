@@ -13,8 +13,11 @@ import org.example.util.TableRouter;
 import java.util.List;
 
 public class MasterRegionServiceImpl implements MasterRegionService {
+    public static String DeleteAll = "DELETEALLTABLES!";
     TableRouter router;
     public synchronized boolean ReportRegion(String RegionId, String ServerIP) {
+        System.out.println("Dubbo received ReportRegion " + RegionId + " "  + ServerIP);
+        // 如果表里没Region，说明这个Region被清空了，所以得清空一下Region的数据库
         router.addRegionServer(RegionId, ServerIP);
         return true;
     }
@@ -22,6 +25,7 @@ public class MasterRegionServiceImpl implements MasterRegionService {
     // return true: ok to delete all tables
     // return false：not to delete all tables
     public synchronized boolean ReportFailure(String RegionId, String SQLDump){
+        System.out.println("Dubbo received ReportFailure " + RegionId);
         // 0. check whether this is the last region
         if(router.getRegions().size() == 1){
             return false;
