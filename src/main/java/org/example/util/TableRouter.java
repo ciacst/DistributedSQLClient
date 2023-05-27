@@ -6,6 +6,8 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import org.example.util.MapSerializer;
 
+import javax.naming.ldap.Control;
+
 enum SqlType {
     SELECT,
     UPDATE,
@@ -130,12 +132,37 @@ public class TableRouter {
         }
     }
 
+    public void deleteRegionServer(String regionId){
+        if(Regions.containsKey(regionId)) {
+            System.out.println("delete region " + regionId);
+
+            RegionTables.remove(regionId);
+            Regions.remove(regionId);
+            WriteTable();
+            WriteRegion();
+        }
+    }
+
     public List<String> getServersOfTable(String table) {
         if(!TableRegion.containsKey(table))
             return null;
         String RegionId = TableRegion.get(table);
         return Regions.get(RegionId);
     }
+
+    public String GetMinRegion(){
+        String regionId = null;
+        Integer minSize = Integer.MAX_VALUE;
+        for(Map.Entry<String, Set<String>> entry : RegionTables.entrySet()) {
+            if(entry.getValue().size() < minSize) {
+                minSize = entry.getValue().size();
+                regionId = entry.getKey();
+            }
+        }
+
+        return regionId;
+    }
+
 
     String ControlTable(String table, SqlType type) {
         if(type.equals(SqlType.DROP)) {
@@ -223,20 +250,20 @@ public class TableRouter {
         RegionTables = new ConcurrentHashMap<>();
 
 //        // todo : use files for initialization and persistence.
-//        List<String> region1 = new ArrayList<>();
-//        region1.add("127.0.0.1:8080");
-//        region1.add("127.0.0.1:8081");
-//        region1.add("127.0.0.1:8082");
-//
-//        List<String> region2 = new ArrayList<>();
-//        region2.add("127.0.0.1:8083");
-//        region2.add("127.0.0.1:8084");
-//        region2.add("127.0.0.1:8085");
-//
-//        Regions.put("region1", region1);
-//        Regions.put("region2", region2);
-//        RegionTables.put("region1", new HashSet<>());
-//        RegionTables.put("region2", new HashSet<>());
+        List<String> region1 = new ArrayList<>();
+        region1.add("127.0.0.1:8080");
+        region1.add("127.0.0.1:8081");
+        region1.add("127.0.0.1:8082");
+
+        List<String> region2 = new ArrayList<>();
+        region2.add("127.0.0.1:8083");
+        region2.add("127.0.0.1:8084");
+        region2.add("127.0.0.1:8085");
+
+        Regions.put("region1", region1);
+        Regions.put("region2", region2);
+        RegionTables.put("region1", new HashSet<>());
+        RegionTables.put("region2", new HashSet<>());
 
         RegionSerializer = new MapSerializer<>();
         TableSerializer = new MapSerializer<>();
