@@ -10,6 +10,8 @@ import org.apache.ratis.protocol.RaftGroupId;
 import org.apache.ratis.thirdparty.com.google.protobuf.ByteString;
 import org.example.Raft.Client;
 import org.example.util.TableRouter;
+
+import java.io.IOException;
 import java.util.List;
 
 public class MasterRegionServiceImpl implements MasterRegionService {
@@ -18,7 +20,16 @@ public class MasterRegionServiceImpl implements MasterRegionService {
     public synchronized boolean ReportRegion(String RegionId, String ServerIP) {
         System.out.println("Dubbo received ReportRegion " + RegionId + " "  + ServerIP);
         // 如果表里没Region，说明这个Region被清空了，所以得清空一下Region的数据库
-        router.addRegionServer(RegionId, ServerIP);
+        if(!router.getRegions().containsKey(RegionId)){
+            try {
+                Client tmpRaftClient = new Client(RegionId,ServerIP);
+                tmpRaftClient.operation(DeleteAll);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            router.addRegionServer(RegionId, ServerIP);
+        }
         return true;
     }
 
