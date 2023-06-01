@@ -206,8 +206,25 @@ public class client {
                 test.run();
                 PrintTable(test.operation(line));
 
-            }catch(Exception e){
-                e.printStackTrace();
+            } catch(Exception e) {
+                GetRegionServerResp resp_tmp = service.GetRegionServer(line);
+                if(!resp_tmp.Found) {
+                    System.out.println("Table not find or sql invalid.");
+                    e.printStackTrace();
+                }
+                raftGroupId = resp_tmp.Region;
+                peers = resp_tmp.Peers;
+                try {
+                    System.out.println("raftGroupId:" + raftGroupId);
+                    System.out.println("peers:" + peers);
+                    Client test = new Client(raftGroupId, peers);
+
+                    test.run();
+                    PrintTable(test.operation(line));
+
+                } catch(Exception e) {
+                    e.printStackTrace();
+                }
             }
 
         }
