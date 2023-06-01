@@ -104,7 +104,7 @@ public class client {
         }
     }
 
-    public static void DeleteTable(GetRegionServerResp new_region, String table_name) {
+    public static void DeleteTable(String table_name) {
         try {
             Map<String, GetRegionServerResp> my_map = getMap();
             my_map.remove(table_name);
@@ -141,6 +141,7 @@ public class client {
         while(true){
             line=reader.readLine();
             String head = line.split(" ")[0].toLowerCase();
+            String table_name = "";
             if(line.toLowerCase().equals("quit")){
                 GoodBye();
                 break;
@@ -163,17 +164,17 @@ public class client {
                 peers = resp.Peers;
                 System.out.println(raftGroupId + " " + peers);
                 if (head.equals("drop")) {
-                    String table_name = getTableOfQuerySql(line, "table");
-                    DeleteTable(resp, table_name);
+                    table_name = getTableOfQuerySql(line, "table");
+                    DeleteTable(table_name);
                 }
                 else {
-                    String table_name = getTableOfQuerySql(line, "table");
+                    table_name = getTableOfQuerySql(line, "table");
                     AddTable(resp, table_name);
                 }
             }
             else {
                 GetRegionServerResp resp = FindExistTable(line);
-                String table_name = "";
+                table_name = "";
                 if (head.equals("insert")) {
                     table_name = getTableOfQuerySql(line, "into");
                 }
@@ -206,7 +207,35 @@ public class client {
                 test.run();
                 PrintTable(test.operation(line));
 
-            }catch(Exception e){
+            }
+            catch(AlreadyClosedException e) {
+                DeleteTable(table_name);
+
+                GetRegionServerResp resp = service.GetRegionServer(line);
+                if(!resp.Found) {
+                    System.out.println("Table not find or sql invalid.");
+                    continue;
+                }
+                raftGroupId = resp.Region;
+                peers = resp.Peers;
+
+                GetRegionServerResp tmp_resp = new GetRegionServerResp(raftGroupId, peers);
+                AddTable(tmp_resp, table_name);
+
+                try {
+                    System.out.println("raftGroupId:" + raftGroupId);
+                    System.out.println("peers:" + peers);
+                    Client test = new Client(raftGroupId, peers);
+
+                    test.run();
+                    PrintTable(test.operation(line));
+
+                }
+                catch(Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            catch(Exception e) {
                 e.printStackTrace();
             }
 
